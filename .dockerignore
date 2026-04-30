@@ -1,0 +1,25 @@
+# Ignore local dependencies
+node_modules
+frontend/node_modules
+backend/__pycache__
+.venv
+venv
+
+# Ignore git and IDE files
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Ignore build artifacts
+frontend/build
+dist
+*.pyc
+
+# Ignore secrets and data
+.env
+backend/.env
+frontend/.env
+sample_stock_data.csv
+backend/ml/saved_models/*

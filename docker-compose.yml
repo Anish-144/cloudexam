@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  # ── FastAPI Backend ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stockpredict-backend
+    restart: unless-stopped
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-changeme-in-production-32chars-minimum}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-stock-market-predictions}
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:80,http://frontend
+      - APP_ENV=production
+    volumes:
+      - model_cache:/app/ml/saved_models
+    networks:
+      - stocknet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    ports:
+      - "8000:8000"   # Expose for direct access during dev
+
+  # ── React Frontend (Nginx) ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stockpredict-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - stocknet
+
+networks:
+  stocknet:
+    driver: bridge
+
+volumes:
+  model_cache:
+    driver: local

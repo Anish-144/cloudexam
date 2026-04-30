@@ -1,0 +1,39 @@
+# Secrets
+.env
+backend/.env
+frontend/.env
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Node / React
+node_modules/
+frontend/node_modules/
+frontend/build/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ML Models & Data
+backend/ml/saved_models/*
+!backend/ml/saved_models/.gitkeep
+sample_stock_data.csv
+*.keras
+*.pkl
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
