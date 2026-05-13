@@ -1,231 +1,167 @@
 # 📈 StockPredict AI
 
-A full-stack, production-ready stock market prediction platform powered by **LSTM deep learning**, **FastAPI**, **React**, and **AWS S3**.
+A high-performance, full-stack stock market prediction platform. Leverage **LSTM (Long Short-Term Memory)** neural networks to forecast stock prices with confidence, backed by a robust **FastAPI** backend and a modern **React** frontend.
+
+---
+
+## ✨ Features
+
+- **Deep Learning Predictions**: Multi-layer LSTM model for high-accuracy time-series forecasting.
+- **Interactive Dashboard**: Visualize historical data and future predictions with dynamic charts.
+- **AWS S3 Integration**: Secure, scalable storage for all your stock datasets.
+- **Production-Ready**: Fully containerized with Docker, Nginx reverse proxy, and JWT security.
+- **Automated Training**: On-the-fly model training with early stopping and learning rate optimization.
 
 ---
 
 ## 🏗️ Architecture
 
-```
-stock-market-app/
-├── backend/                    # FastAPI Python backend
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── auth.py         # JWT authentication endpoints
-│   │   │   └── stock.py        # Upload & prediction endpoints
-│   │   ├── core/
-│   │   │   ├── config.py       # Pydantic settings / env vars
-│   │   │   └── security.py     # JWT creation & validation
-│   │   ├── models/
-│   │   │   └── schemas.py      # Pydantic request/response models
-│   │   ├── services/
-│   │   │   ├── s3_service.py   # AWS S3 integration (boto3)
-│   │   │   └── data_processor.py # CSV validation & statistics
-│   │   └── main.py             # FastAPI app factory
-│   ├── ml/
-│   │   └── lstm_model.py       # LSTM model (TF/Keras)
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/                   # React + TypeScript frontend
-│   ├── src/
-│   │   ├── api/client.ts       # Axios API client with JWT interceptors
-│   │   ├── components/
-│   │   │   ├── FileUpload.tsx  # Drag-and-drop CSV uploader
-│   │   │   ├── StockChart.tsx  # Recharts historical + prediction chart
-│   │   │   ├── PredictionTable.tsx
-│   │   │   └── StatsCards.tsx
-│   │   ├── context/
-│   │   │   └── AuthContext.tsx # Global auth state
-│   │   ├── pages/
-│   │   │   ├── AuthPage.tsx    # Login / Register
-│   │   │   └── Dashboard.tsx   # Main dashboard
-│   │   ├── types/index.ts
-│   │   ├── App.tsx
-│   │   └── index.css           # Dark-mode design system
-│   ├── nginx.conf
-│   └── Dockerfile
-├── docker-compose.yml
-├── generate_sample_csv.py      # Generate test data
-└── .env.example
+```mermaid
+graph TD
+    User((User)) -->|HTTPS| Nginx[Nginx Reverse Proxy]
+    Nginx -->|Static Files| React[React Frontend]
+    Nginx -->|API Requests| FastAPI[FastAPI Backend]
+    FastAPI -->|JWT Auth| Security[Auth Service]
+    FastAPI -->|Save/Load| S3[AWS S3 Bucket]
+    FastAPI -->|Train/Predict| LSTM[TensorFlow LSTM Model]
+    LSTM -->|Cache| Volume[Docker Volume]
 ```
 
 ---
 
 ## 🚀 Quick Start (Local Development)
 
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- AWS account with S3 bucket (or use mock mode)
+### 📋 Prerequisites
+- **Python**: 3.11 or higher
+- **Node.js**: 20.x or higher
+- **AWS Account**: S3 bucket and IAM credentials (or use local mock mode)
 
-### 1. Clone & Configure
-
+### 1. Repository Setup
 ```bash
+git clone https://github.com/your-username/stock-market-app.git
 cd stock-market-app
 cp .env.example .env
-# Edit .env with your AWS credentials and a strong SECRET_KEY
+# Open .env and fill in your AWS credentials
 ```
 
-### 2. Backend Setup
-
+### 2. Backend Initialization
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env   # Add your AWS keys here too
 python -m uvicorn app.main:app --reload --port 8000
 ```
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-API docs: http://localhost:8000/docs
-
-### 3. Frontend Setup
-
+### 3. Frontend Initialization
 ```bash
-cd frontend
+cd ../frontend
 npm install
 npm start
 ```
+- **Dashboard**: [http://localhost:3000](http://localhost:3000)
 
-App: http://localhost:3000
-
-### 4. Generate Sample Test Data
-
+### 4. Seed Data
 ```bash
+# In the root directory
 python generate_sample_csv.py
-# Creates: sample_stock_data.csv (5 years of simulated data)
+# This creates 'sample_stock_data.csv' for testing
 ```
 
 ---
 
-## 🐳 Docker Deployment
+## 🐳 Docker Deployment (Recommended)
 
-### Local Docker Compose
+The easiest way to run the full stack in production-like conditions.
 
+### 🛠️ One-Command Build & Run
 ```bash
-# Copy and fill env file
-cp .env.example .env
-
-# Build and start all containers
-docker-compose up --build
-
-# App runs at http://localhost:80
-# API docs at http://localhost:8000/docs
+# Ensure .env is configured in the root
+docker-compose up --build -d
 ```
 
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `SECRET_KEY` | JWT signing secret (min 32 chars) | ✅ |
-| `AWS_ACCESS_KEY_ID` | AWS access key | ✅ |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | ✅ |
-| `AWS_REGION` | AWS region (default: us-east-1) | ✅ |
-| `S3_BUCKET_NAME` | S3 bucket name | ✅ |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT expiry (default: 30) | ❌ |
-| `MAX_FILE_SIZE_MB` | Max upload size (default: 50) | ❌ |
+- **Frontend**: [http://localhost](http://localhost) (Port 80)
+- **Backend API**: [http://localhost:8000](http://localhost:8000)
+- **Health Check**: `curl http://localhost/health`
 
 ---
 
-## ☁️ AWS EC2 Deployment
+## ☁️ AWS EC2 Deployment Guide
 
-### 1. Launch EC2 Instance
-- AMI: Amazon Linux 2023 (or Ubuntu 22.04)
-- Instance: `t3.medium` (minimum; `t3.large` for faster training)
-- Security Groups: Open ports 80, 443, 22
+### 1. Provision EC2 Instance
+- **AMI**: Amazon Linux 2023 or Ubuntu 22.04 LTS.
+- **Instance Type**: `t3.medium` or any available high free tier instance(Minimum 4GB RAM required for model training).
+- **Security Group**:
+  - Inbound: SSH (22), HTTP (80), HTTPS (443), Backend (8000).
 
-### 2. Install Docker
+### 2. Prepare Environment
 ```bash
 sudo yum update -y
 sudo yum install -y docker git
-sudo systemctl start docker
+sudo systemctl enable --now docker
 sudo usermod -a -G docker ec2-user
+
+# Install Docker Compose
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-### 3. Deploy
+### 3. Deploy Application
 ```bash
-git clone <your-repo> stock-market-app
+git clone <your-repo-url>
 cd stock-market-app
-cp .env.example .env && nano .env   # Fill in credentials
+cp .env.example .env && nano .env  # Update with production values
 docker-compose up -d --build
 ```
 
-### 4. Create S3 Bucket
-```bash
-aws s3 mb s3://your-bucket-name --region us-east-1
-# Enable versioning (recommended)
-aws s3api put-bucket-versioning \
-  --bucket your-bucket-name \
-  --versioning-configuration Status=Enabled
-```
+### 4. S3 Bucket Configuration
+Ensure your S3 bucket has the following IAM policy permissions for the user/role used by the app:
+- `s3:PutObject`
+- `s3:GetObject`
+- `s3:ListBucket`
+- `s3:DeleteObject`
 
 ---
 
-## 📊 API Endpoints
+## ⚙️ Configuration (.env)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/auth/register` | ❌ | Register user |
-| POST | `/api/v1/auth/token` | ❌ | Login → JWT token |
-| GET  | `/api/v1/auth/me` | ✅ | Current user |
-| POST | `/api/v1/stock/upload` | ✅ | Upload CSV → S3 |
-| POST | `/api/v1/stock/predict` | ✅ | Run LSTM prediction |
-| GET  | `/api/v1/stock/files` | ✅ | List uploaded files |
-| GET  | `/api/v1/stock/files/{id}/stats` | ✅ | File statistics |
-
----
-
-## 🧠 ML Model Details
-
-- **Architecture**: 3-layer stacked LSTM (128 → 64 → 32 units) with BatchNorm + Dropout
-- **Optimizer**: Adam with ReduceLROnPlateau scheduler
-- **Early Stopping**: Patience=10 on validation loss
-- **Input**: Last 60 trading days (configurable)
-- **Output**: Next 7–90 day predictions with confidence bands
-- **Preprocessing**: MinMax scaling (0–1), skip-weekend date generation
-- **Metrics**: RMSE, MAE, MAPE reported per prediction
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SECRET_KEY` | JWT signing secret (use a long random string) | `changeme` |
+| `AWS_ACCESS_KEY_ID` | Your AWS access key | - |
+| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key | - |
+| `AWS_REGION` | AWS region for S3 | `us-east-1` |
+| `S3_BUCKET_NAME` | Name of your S3 bucket | `stockpredict-data` |
+| `MAX_FILE_SIZE_MB` | Maximum CSV upload size | `50` |
+| `APP_ENV` | Environment (`development` or `production`) | `production` |
 
 ---
 
-## 📋 CSV Format
+## 🛠️ Troubleshooting
 
-```csv
-Date,Open,High,Low,Close,Volume
-2020-01-02,296.24,300.60,295.19,300.35,33870100
-2020-01-03,297.15,300.12,296.00,298.50,28000000
-...
-```
+### ❌ "Access Denied" (S3)
+- Check that your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are correct.
+- Ensure the IAM user has `AmazonS3FullAccess` or a custom policy for your specific bucket.
 
-- **Date**: YYYY-MM-DD format
-- **Close** column is mandatory; others are optional
-- Minimum **100 rows** required
-- Maximum **50 MB** file size
+### ❌ Docker Build Fails (Backend)
+- Ensure you have at least 4GB of RAM. TensorFlow can be memory-intensive during the installation/build phase.
 
----
-
-## 🔒 Security Features
-
-- JWT authentication (configurable expiry)
-- bcrypt password hashing
-- File type & size validation
-- S3 server-side encryption (AES256)
-- CORS origin whitelist
-- Input sanitization on all endpoints
+### ❌ Dashboard shows "Connection Refused"
+- Verify that the backend container is healthy: `docker ps`.
+- Check logs: `docker-compose logs -f backend`.
+- Ensure `REACT_APP_API_URL` in frontend build matches your server's IP/Domain.
 
 ---
 
-## 📦 Tech Stack
+## 📊 Maintenance & Logs
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + TypeScript |
-| Charts | Recharts |
-| Styling | Vanilla CSS (dark mode) |
-| HTTP Client | Axios |
-| Backend | FastAPI + Uvicorn |
-| ML | TensorFlow 2.15 / Keras LSTM |
-| Data | Pandas, NumPy, scikit-learn |
-| Auth | JWT (python-jose) + bcrypt |
-| Cloud | AWS S3 (boto3) |
-| Container | Docker + Docker Compose |
-| Web Server | Nginx (reverse proxy) |
+- **View All Logs**: `docker-compose logs -f`
+- **Backend Logs**: `docker-compose logs -f backend`
+- **Restart Services**: `docker-compose restart`
+- **Clean Volumes**: `docker-compose down -v` (⚠️ This will delete cached models)
+
+---
+
+## 📜 License
+Distributed under the MIT License. See `LICENSE` for more information.
